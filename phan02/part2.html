@@ -7,8 +7,8 @@
 
 <link rel="stylesheet" href="style.css">
 
-<!-- GIỮ NGUYÊN TOÀN BỘ STYLE CỦA BẠN -->
 <style>
+
 /* ===== TOP BAR ===== */
 .top-bar{
     display:flex;
@@ -45,24 +45,26 @@
     max-width:900px;
     margin:30px auto;
     padding:0 15px;
+    text-align:center;
 }
 
-h1{
-    text-align:center;
-    margin-bottom:10px;
-}
-
-.timer{
-    text-align:center;
-    font-size:34px;
+.circle{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    border:6px solid #1e3a8a;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:26px;
     font-weight:bold;
     color:#1e3a8a;
-    margin:20px 0;
+    margin:20px auto 5px auto;
 }
 
-.image-box{
-    text-align:center;
-    margin-bottom:25px;
+.timer-text{
+    font-weight:bold;
+    margin-bottom:15px;
 }
 
 .image-box img{
@@ -72,55 +74,66 @@ h1{
 }
 
 .question{
-    background:#f1f5ff;
-    padding:18px;
-    border-radius:10px;
-    margin-bottom:15px;
     font-size:20px;
+    margin:20px 0;
 }
 
 .controls{
-    text-align:center;
-    margin-top:20px;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-top:15px;
 }
 
-.controls button{
-    padding:14px 24px;
-    font-size:18px;
+.record-btn{
+    background:#0f172a;
+    color:#fff;
+    padding:12px 20px;
     border:none;
     border-radius:8px;
-    background:#1e3a8a;
-    color:#fff;
     cursor:pointer;
+    font-weight:600;
+}
+
+.cue-btn{
+    background:#facc15;
+    color:#000;
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+}
+
+.cue-box{
+    display:none;
+    margin-top:15px;
+    background:#fff3cd;
+    padding:12px;
+    border-radius:8px;
 }
 
 .result-box{
     margin-top:30px;
 }
 
-.result-box audio{
-    width:100%;
-    margin:10px 0;
+@media(max-width:600px){
+    .circle{
+        width:100px;
+        height:100px;
+        font-size:30px;
+    }
 }
 
-/* MOBILE */
-@media(max-width:600px){
-    .question{
-        font-size:21px;
-    }
-    .timer{
-        font-size:40px;
-    }
-}
 </style>
 </head>
 
 <body>
 
 <div class="top-bar">
-    <div class="left">
-        APTIS Speaking – Part 2
-    </div>
+    <div class="left">APTIS Speaking – Part 2</div>
     <div class="actions">
         <a href="part2-select.html">⬅ Danh sách bài</a>
         <a href="../index.html">🏠 Trang chủ</a>
@@ -130,29 +143,139 @@ h1{
 
 <div class="container">
 
-    <h1 id="testTitle">Practice Test</h1>
+<h2 id="testTitle"></h2>
 
-    <div class="timer" id="timer">45</div>
+<div class="circle" id="circle">45</div>
+<div class="timer-text" id="timerText">45s</div>
 
-    <div class="image-box">
-        <img id="testImage" src="" alt="Part 2 Image">
-    </div>
+<div class="image-box">
+    <img id="testImage" src="">
+</div>
 
-    <div id="questionBox" class="question"></div>
+<div class="question" id="questionText"></div>
 
-    <div class="controls">
-        <button id="startBtn">Start Test</button>
-    </div>
+<div class="controls">
+    <button class="record-btn" id="startBtn">🎙 Start</button>
+    <button class="cue-btn" id="cueBtn">💡 Cue</button>
+</div>
 
-    <div id="resultBox" class="result-box"></div>
+<div class="cue-box" id="cueBox"></div>
+
+<div class="result-box" id="resultBox"></div>
 
 </div>
 
-<!-- LOAD DATA -->
 <script src="part2-data.js"></script>
 
-<!-- LOAD LOGIC PRO -->
-<script src="app2.js"></script>
+<script>
+if(localStorage.getItem("logged") !== "1"){
+    alert("Bạn cần đăng nhập trước");
+    window.location.href="../index.html";
+}
+
+document.getElementById("logoutBtn").onclick=function(){
+    localStorage.removeItem("logged");
+    window.location.href="../index.html";
+};
+
+const params=new URLSearchParams(window.location.search);
+const testId=parseInt(params.get("test"))||1;
+const data=part2Data.find(t=>t.id===testId);
+
+document.getElementById("testTitle").textContent=data.title;
+document.getElementById("testImage").src=data.image;
+
+let current=0;
+let time=45;
+let interval;
+let mediaRecorder;
+let chunks=[];
+let recordings=[];
+
+const circle=document.getElementById("circle");
+const timerText=document.getElementById("timerText");
+const questionText=document.getElementById("questionText");
+const cueBtn=document.getElementById("cueBtn");
+const cueBox=document.getElementById("cueBox");
+const resultBox=document.getElementById("resultBox");
+
+function showQuestion(){
+    questionText.textContent=data.questions[current];
+    cueBox.textContent=data.answers[current];
+    cueBox.style.display="none";
+}
+
+async function startRecording(){
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mediaRecorder=new MediaRecorder(stream);
+    mediaRecorder.start();
+    chunks=[];
+
+    mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+
+    mediaRecorder.onstop=()=>{
+        const blob=new Blob(chunks,{type:"audio/webm"});
+        const url=URL.createObjectURL(blob);
+        recordings.push(url);
+    };
+}
+
+function startTimer(){
+    time=45;
+    circle.textContent=time;
+    timerText.textContent=time+"s";
+
+    interval=setInterval(()=>{
+        time--;
+        circle.textContent=time;
+        timerText.textContent=time+"s";
+
+        if(time<=0){
+            clearInterval(interval);
+            mediaRecorder.stop();
+            nextQuestion();
+        }
+    },1000);
+}
+
+function nextQuestion(){
+    current++;
+    if(current<3){
+        showQuestion();
+        startRecording();
+        startTimer();
+    }else{
+        finishTest();
+    }
+}
+
+function finishTest(){
+    questionText.textContent="Hoàn thành Part 2";
+    resultBox.innerHTML="<h3>Nghe lại & Download</h3>";
+
+    recordings.forEach((url,i)=>{
+        resultBox.innerHTML+=`
+            <p>Question ${i+1}</p>
+            <audio controls src="${url}"></audio><br>
+            <a href="${url}" download="Part2_Q${i+1}.webm">Download</a><br><br>
+        `;
+    });
+}
+
+document.getElementById("startBtn").onclick=async function(){
+    current=0;
+    recordings=[];
+    resultBox.innerHTML="";
+    showQuestion();
+    await startRecording();
+    startTimer();
+};
+
+cueBtn.onclick=function(){
+    cueBox.style.display=
+        cueBox.style.display==="none"?"block":"none";
+};
+</script>
 
 </body>
 </html>
