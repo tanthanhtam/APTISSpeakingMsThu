@@ -7,8 +7,8 @@
 
 <link rel="stylesheet" href="style.css">
 
+<!-- GIỮ NGUYÊN TOÀN BỘ STYLE CỦA BẠN -->
 <style>
-
 /* ===== TOP BAR ===== */
 .top-bar{
     display:flex;
@@ -54,7 +54,7 @@ h1{
 
 .timer{
     text-align:center;
-    font-size:30px;
+    font-size:34px;
     font-weight:bold;
     color:#1e3a8a;
     margin:20px 0;
@@ -76,15 +76,7 @@ h1{
     padding:18px;
     border-radius:10px;
     margin-bottom:15px;
-    font-size:18px;
-}
-
-.cue-box{
-    display:none;
-    margin-top:10px;
-    background:#fff3cd;
-    padding:12px;
-    border-radius:8px;
+    font-size:20px;
 }
 
 .controls{
@@ -93,8 +85,8 @@ h1{
 }
 
 .controls button{
-    padding:12px 22px;
-    font-size:16px;
+    padding:14px 24px;
+    font-size:18px;
     border:none;
     border-radius:8px;
     background:#1e3a8a;
@@ -102,26 +94,29 @@ h1{
     cursor:pointer;
 }
 
-.controls button:hover{
-    opacity:0.9;
+.result-box{
+    margin-top:30px;
+}
+
+.result-box audio{
+    width:100%;
+    margin:10px 0;
 }
 
 /* MOBILE */
 @media(max-width:600px){
     .question{
-        font-size:20px;
+        font-size:21px;
     }
     .timer{
-        font-size:34px;
+        font-size:40px;
     }
 }
-
 </style>
 </head>
 
 <body>
 
-<!-- TOP BAR -->
 <div class="top-bar">
     <div class="left">
         APTIS Speaking – Part 2
@@ -143,112 +138,21 @@ h1{
         <img id="testImage" src="" alt="Part 2 Image">
     </div>
 
-    <div id="questionsBox"></div>
+    <div id="questionBox" class="question"></div>
 
     <div class="controls">
-        <button id="startBtn">Start</button>
+        <button id="startBtn">Start Test</button>
     </div>
+
+    <div id="resultBox" class="result-box"></div>
 
 </div>
 
-<!-- LOAD DATA FIRST -->
+<!-- LOAD DATA -->
 <script src="part2-data.js"></script>
 
-<script>
-window.addEventListener("DOMContentLoaded", function(){
-
-/* ===== LOGIN CHECK ===== */
-if(localStorage.getItem("logged") !== "1"){
-    alert("Bạn cần đăng nhập trước");
-    window.location.href = "../index.html";
-}
-
-/* ===== LOGOUT ===== */
-document.getElementById("logoutBtn").addEventListener("click", function(){
-    localStorage.removeItem("logged");
-    window.location.href = "../index.html";
-});
-
-/* ===== GET TEST NUMBER FROM URL ===== */
-const urlParams = new URLSearchParams(window.location.search);
-const testId = parseInt(urlParams.get("test")) || 1;
-
-/* ===== FIND TEST ===== */
-const data = part2Data.find(t => t.id === testId);
-
-if(!data){
-    alert("Không tìm thấy bài test!");
-    return;
-}
-
-document.getElementById("testTitle").textContent = data.title;
-document.getElementById("testImage").src = data.image;
-
-let currentQuestion = 0;
-let time = 45;
-let timerInterval;
-
-const timerEl = document.getElementById("timer");
-const box = document.getElementById("questionsBox");
-
-/* ===== SHOW QUESTION ===== */
-function showQuestion(){
-    box.innerHTML = "";
-
-    const q = document.createElement("div");
-    q.className = "question";
-    q.textContent = data.questions[currentQuestion];
-
-    const cueBtn = document.createElement("button");
-    cueBtn.textContent = "Show Cue";
-    cueBtn.style.marginTop = "10px";
-
-    const cueBox = document.createElement("div");
-    cueBox.className = "cue-box";
-    cueBox.textContent = data.answers[currentQuestion];
-
-    cueBtn.onclick = function(){
-        cueBox.style.display = cueBox.style.display === "none" ? "block" : "none";
-    };
-
-    box.appendChild(q);
-    box.appendChild(cueBtn);
-    box.appendChild(cueBox);
-
-    startTimer();
-}
-
-/* ===== TIMER ===== */
-function startTimer(){
-    time = 45;
-    timerEl.textContent = time;
-    clearInterval(timerInterval);
-
-    timerInterval = setInterval(()=>{
-        time--;
-        timerEl.textContent = time;
-
-        if(time <= 0){
-            clearInterval(timerInterval);
-            currentQuestion++;
-
-            if(currentQuestion < 3){
-                showQuestion();
-            } else {
-                alert("Hoàn thành Part 2!");
-            }
-        }
-    },1000);
-}
-
-/* ===== START BUTTON ===== */
-document.getElementById("startBtn").addEventListener("click", function(){
-    currentQuestion = 0;
-    showQuestion();
-});
-
-});
-</script>
+<!-- LOAD LOGIC PRO -->
+<script src="app2.js"></script>
 
 </body>
 </html>
